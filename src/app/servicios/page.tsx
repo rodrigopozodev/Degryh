@@ -71,6 +71,8 @@ export default function ServiciosPage() {
   const [activeSection, setActiveSection] = useState(0);
   const isAnimatingRef = useRef(false);
   const animationDuration = 700;
+  const touchStartYRef = useRef<number | null>(null);
+  const touchDeltaYRef = useRef(0);
 
   const goToSection = (index: number) => {
     if (isAnimatingRef.current) return;
@@ -103,11 +105,40 @@ export default function ServiciosPage() {
     return () => window.removeEventListener("hashchange", handleHash);
   }, []);
 
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    touchStartYRef.current = event.touches[0]?.clientY ?? null;
+    touchDeltaYRef.current = 0;
+  };
+
+  const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (touchStartYRef.current === null) return;
+    const currentY = event.touches[0]?.clientY ?? touchStartYRef.current;
+    touchDeltaYRef.current = touchStartYRef.current - currentY;
+    if (Math.abs(touchDeltaYRef.current) > 10) {
+      event.preventDefault();
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartYRef.current === null) return;
+    const threshold = 50;
+    if (touchDeltaYRef.current > threshold) {
+      goToSection(activeSection + 1);
+    } else if (touchDeltaYRef.current < -threshold) {
+      goToSection(activeSection - 1);
+    }
+    touchStartYRef.current = null;
+    touchDeltaYRef.current = 0;
+  };
   return (
     <div className="h-full overflow-hidden px-6">
       <div
         className="mx-auto h-[calc(100svh-80px)] w-full max-w-6xl overflow-hidden px-10"
         onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ touchAction: "none" }}
       >
         <div
           className="h-full transition-transform ease-out"
