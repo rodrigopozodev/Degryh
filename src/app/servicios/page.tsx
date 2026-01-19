@@ -71,7 +71,8 @@ export default function ServiciosPage() {
   const [activeSection, setActiveSection] = useState(0);
   const isAnimatingRef = useRef(false);
   const animationDuration = 700;
-  const [isDesktop, setIsDesktop] = useState(false);
+  const touchStartYRef = useRef<number | null>(null);
+  const touchDeltaYRef = useRef(0);
 
   const goToSection = (index: number) => {
     if (isAnimatingRef.current) return;
@@ -104,29 +105,47 @@ export default function ServiciosPage() {
     return () => window.removeEventListener("hashchange", handleHash);
   }, []);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
-    const handleChange = () => setIsDesktop(mediaQuery.matches);
-    handleChange();
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    touchStartYRef.current = event.touches[0]?.clientY ?? null;
+    touchDeltaYRef.current = 0;
+  };
+
+  const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (touchStartYRef.current === null) return;
+    const currentY = event.touches[0]?.clientY ?? touchStartYRef.current;
+    touchDeltaYRef.current = touchStartYRef.current - currentY;
+    if (Math.abs(touchDeltaYRef.current) > 10) {
+      event.preventDefault();
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartYRef.current === null) return;
+    const threshold = 50;
+    if (touchDeltaYRef.current > threshold) {
+      goToSection(activeSection + 1);
+    } else if (touchDeltaYRef.current < -threshold) {
+      goToSection(activeSection - 1);
+    }
+    touchStartYRef.current = null;
+    touchDeltaYRef.current = 0;
+  };
 
   return (
-    <div className="h-full px-4 sm:px-6">
+    <div className="h-full overflow-hidden px-6">
       <div
-        className="mx-auto w-full max-w-6xl lg:h-[calc(100svh-80px)] lg:overflow-hidden lg:px-10"
-        onWheel={isDesktop ? handleWheel : undefined}
+        className="mx-auto h-[calc(100svh-80px)] w-full max-w-6xl overflow-hidden px-10"
+        onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ touchAction: "none" }}
       >
         <div
-          className="transition-transform ease-out lg:h-full"
-          style={
-            isDesktop
-              ? { transform: `translateY(-${activeSection * 100}%)`, transitionDuration: `${animationDuration}ms` }
-              : undefined
-          }
+          className="h-full transition-transform ease-out"
+          style={{ transform: `translateY(-${activeSection * 100}%)`, transitionDuration: `${animationDuration}ms` }}
         >
-          <section className="flex min-h-[calc(100svh-80px)] flex-col justify-center gap-10 py-10 lg:h-[calc(100svh-80px)]">
+          <section className="flex h-[calc(100svh-80px)] flex-col justify-center gap-10 py-10">
             <div className="space-y-3">
               <h1 className="text-3xl font-semibold text-foreground md:text-4xl">
                 Ejemplos que podemos aplicar a tu negocio.
@@ -151,7 +170,7 @@ export default function ServiciosPage() {
             </div>
           </section>
 
-          <section className="flex min-h-[calc(100svh-80px)] flex-col justify-center gap-6 py-10 lg:h-[calc(100svh-80px)]">
+          <section className="flex h-[calc(100svh-80px)] flex-col justify-center gap-6 py-10">
             <div className="space-y-3">
               <h2 className="text-2xl font-semibold text-foreground md:text-3xl">
                 Un flujo claro, visual y sin fricciones desde el contacto hasta la entrega.
@@ -177,7 +196,7 @@ export default function ServiciosPage() {
           </section>
         </div>
       </div>
-      <div className="absolute right-6 top-1/2 hidden -translate-y-1/2 flex-col gap-2 lg:flex">
+      <div className="absolute right-6 top-1/2 flex -translate-y-1/2 flex-col gap-2">
         {[0, 1].map((index) => (
           <button
             key={index}
