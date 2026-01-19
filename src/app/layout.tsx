@@ -31,7 +31,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <div className="min-h-[100svh] bg-background text-foreground">
             <Header />
-            <main className="h-[100svh] overflow-hidden pt-20">{children}</main>
+            <main className="h-[100svh] overflow-y-auto pt-20 lg:overflow-hidden">{children}</main>
           </div>
         </ThemeProvider>
       </body>

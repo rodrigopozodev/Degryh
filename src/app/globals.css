@@ -140,9 +140,14 @@ body {
     0 0 8px rgba(80, 160, 255, 0.35);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 1024px) {
   html {
     font-size: 75%;
+  }
+  html,
+  body {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
